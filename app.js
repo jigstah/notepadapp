@@ -19,6 +19,11 @@ const importBtn = document.getElementById("import-btn");
 const importFile = document.getElementById("import-file");
 const csvBtn = document.getElementById("csv-btn");
 
+const reportMonthEl = document.getElementById("report-month");
+const reportOutputEl = document.getElementById("report-output");
+const reportCsvBtn = document.getElementById("report-csv-btn");
+const reportPrintBtn = document.getElementById("report-print-btn");
+
 const CURRENCY_SYMBOL = { EUR: "€", USD: "$", PHP: "₱" };
 
 /** @type {{id:string, amount:number, currency:string, tag:string, date:string, comments:string}[]} */
@@ -120,6 +125,68 @@ function render() {
 
   renderTotals(filter ? visible : expenses);
   renderFilterOptions();
+  renderReport();
+}
+
+function monthLabel(ym) {
+  const d = new Date(ym + "-01T00:00:00");
+  if (isNaN(d)) return ym;
+  return d.toLocaleDateString(undefined, { month: "long", year: "numeric" });
+}
+
+function renderReport() {
+  const ym = reportMonthEl.value;
+  if (!ym) {
+    reportOutputEl.innerHTML = "";
+    return;
+  }
+  const items = expenses.filter((e) => e.date.slice(0, 7) === ym);
+  if (!items.length) {
+    reportOutputEl.innerHTML = `<p class="report-empty">No expenses recorded in ${escapeHtml(monthLabel(ym))}.</p>`;
+    return;
+  }
+
+  // Group: currency -> category -> tag -> {sum, count}
+  const byCur = {};
+  for (const e of items) {
+    const cur = e.currency;
+    const category = e.tag.split(" - ")[0] || "other";
+    byCur[cur] = byCur[cur] || { total: 0, count: 0, cats: {} };
+    byCur[cur].total += Number(e.amount);
+    byCur[cur].count += 1;
+    const cats = byCur[cur].cats;
+    cats[category] = cats[category] || { total: 0, tags: {} };
+    cats[category].total += Number(e.amount);
+    cats[category].tags[e.tag] = (cats[category].tags[e.tag] || 0) + Number(e.amount);
+  }
+
+  let html = "";
+  for (const cur of Object.keys(byCur).sort()) {
+    const c = byCur[cur];
+    html += `<div class="report-cur">
+      <div class="report-cur-head">
+        <span class="cur-name">${escapeHtml(cur)} · ${escapeHtml(monthLabel(ym))}</span>
+        <span><span class="cur-total">${escapeHtml(formatMoney(c.total, cur))}</span>
+        <span class="cur-count"> · ${c.count} ${c.count === 1 ? "entry" : "entries"}</span></span>
+      </div>`;
+    for (const cat of Object.keys(c.cats).sort()) {
+      const cd = c.cats[cat];
+      html += `<div class="report-cat">
+        <div class="report-cat-head">
+          <span class="cat-name">${escapeHtml(cat)}</span>
+          <span>${escapeHtml(formatMoney(cd.total, cur))}</span>
+        </div>`;
+      for (const tag of Object.keys(cd.tags).sort()) {
+        html += `<div class="report-tag-row">
+          <span>${escapeHtml(tag)}</span>
+          <span class="tag-amt">${escapeHtml(formatMoney(cd.tags[tag], cur))}</span>
+        </div>`;
+      }
+      html += `</div>`;
+    }
+    html += `</div>`;
+  }
+  reportOutputEl.innerHTML = html;
 }
 
 function renderTotals(items) {
@@ -220,6 +287,28 @@ csvBtn.addEventListener("click", () => {
   download(`expenses-${todayISO()}.csv`, [header.join(","), ...rows].join("\r\n"), "text/csv");
 });
 
+reportMonthEl.addEventListener("change", renderReport);
+
+reportPrintBtn.addEventListener("click", () => window.print());
+
+reportCsvBtn.addEventListener("click", () => {
+  const ym = reportMonthEl.value;
+  const items = expenses
+    .filter((e) => e.date.slice(0, 7) === ym)
+    .sort((a, b) => (a.date < b.date ? 1 : -1));
+  if (!items.length) {
+    alert("No expenses to export for that month.");
+    return;
+  }
+  const header = ["date", "amount", "currency", "category", "tag", "comments"];
+  const rows = items.map((e) =>
+    [e.date, e.amount, e.currency, e.tag.split(" - ")[0], e.tag, e.comments]
+      .map((v) => `"${String(v).replace(/"/g, '""')}"`)
+      .join(",")
+  );
+  download(`expenses-${ym}.csv`, [header.join(","), ...rows].join("\r\n"), "text/csv");
+});
+
 importBtn.addEventListener("click", () => importFile.click());
 
 importFile.addEventListener("change", () => {
@@ -256,4 +345,5 @@ importFile.addEventListener("change", () => {
 
 // --- init ----------------------------------------------------------------
 dateEl.value = todayISO();
+reportMonthEl.value = todayISO().slice(0, 7);
 render();

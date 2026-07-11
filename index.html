@@ -14,7 +14,7 @@
   </header>
 
   <main>
-    <section class="card" aria-labelledby="add-heading">
+    <section class="card no-print" aria-labelledby="add-heading">
       <h2 id="add-heading">Add expense</h2>
       <form id="expense-form" autocomplete="off">
         <div class="row">
@@ -77,7 +77,22 @@
       </form>
     </section>
 
-    <section class="card" aria-labelledby="list-heading">
+    <section class="card" aria-labelledby="report-heading" id="report-card">
+      <div class="list-header">
+        <h2 id="report-heading">Monthly report</h2>
+        <div class="tools no-print">
+          <label class="filter">
+            <span class="sr-only">Report month</span>
+            <input type="month" id="report-month" />
+          </label>
+          <button type="button" id="report-csv-btn" class="ghost" title="Download this month as CSV">Export CSV</button>
+          <button type="button" id="report-print-btn" class="ghost" title="Print or save as PDF">Print / PDF</button>
+        </div>
+      </div>
+      <div id="report-output" class="report-output" aria-live="polite"></div>
+    </section>
+
+    <section class="card no-print" aria-labelledby="list-heading">
       <div class="list-header">
         <h2 id="list-heading">Expenses</h2>
         <div class="tools">
