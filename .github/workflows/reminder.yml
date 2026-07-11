@@ -1,0 +1,47 @@
+name: Daily expense reminder
+
+# Sends a Telegram message at 22:00 Central-European time (Europe/Berlin),
+# staying correct across the CET/CEST daylight-saving switch.
+#
+# GitHub cron only understands UTC and does not follow DST, so we trigger at
+# both candidate UTC hours (21:00 = winter, 20:00 = summer) and then let the
+# job itself send only when the local Berlin hour is actually 22.
+
+on:
+  schedule:
+    - cron: "0 21 * * *"   # 22:00 CET  (winter, UTC+1)
+    - cron: "0 20 * * *"   # 22:00 CEST (summer, UTC+2)
+  workflow_dispatch:        # allow manual test runs from the Actions tab
+
+jobs:
+  remind:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send reminder if it is 22:00 in Berlin
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          set -euo pipefail
+          HOUR=$(TZ="Europe/Berlin" date +%H)
+          echo "Current Berlin hour: $HOUR"
+
+          # On manual runs, always send. On scheduled runs, only at 22:00 local.
+          if [ "${{ github.event_name }}" != "workflow_dispatch" ] && [ "$HOUR" != "22" ]; then
+            echo "Not 22:00 in Berlin — skipping."
+            exit 0
+          fi
+
+          if [ -z "${TELEGRAM_BOT_TOKEN:-}" ] || [ -z "${TELEGRAM_CHAT_ID:-}" ]; then
+            echo "::error::TELEGRAM_BOT_TOKEN and/or TELEGRAM_CHAT_ID secrets are not set."
+            exit 1
+          fi
+
+          MESSAGE="💸 Time to log today's expenses! Open your tracker: https://jigstah.github.io/notepadapp/"
+
+          curl -sS --fail \
+            "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
+            --data-urlencode "chat_id=${TELEGRAM_CHAT_ID}" \
+            --data-urlencode "text=${MESSAGE}" \
+            --data-urlencode "disable_web_page_preview=false"
+          echo "Reminder sent."

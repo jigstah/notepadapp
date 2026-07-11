@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+  <meta name="theme-color" content="#0f766e" />
+  <title>Expense Tracker</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header>
+    <h1>Expense Tracker</h1>
+    <p class="tagline">Log your spending, tag it, review it.</p>
+  </header>
+
+  <main>
+    <section class="card" aria-labelledby="add-heading">
+      <h2 id="add-heading">Add expense</h2>
+      <form id="expense-form" autocomplete="off">
+        <div class="row">
+          <div class="field amount-field">
+            <label for="amount">Amount</label>
+            <input type="number" id="amount" name="amount" inputmode="decimal"
+                   step="0.01" min="0" placeholder="0.00" required />
+          </div>
+          <div class="field currency-field">
+            <label for="currency">Currency</label>
+            <select id="currency" name="currency" required>
+              <option value="EUR">EUR</option>
+              <option value="USD">USD</option>
+              <option value="PHP">PHP</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="tag">Tag</label>
+          <select id="tag" name="tag" required>
+            <option value="" disabled selected>Select a tag…</option>
+            <optgroup label="Food">
+              <option value="food - grocery">food - grocery</option>
+              <option value="food - drinks out">food - drinks out</option>
+              <option value="food - eat out">food - eat out</option>
+              <option value="food - order in/takeaway">food - order in/takeaway</option>
+            </optgroup>
+            <optgroup label="Utilities">
+              <option value="utilities - electricity">utilities - electricity</option>
+              <option value="utilities - phone">utilities - phone</option>
+              <option value="utilities - water">utilities - water</option>
+              <option value="utilities - heat">utilities - heat</option>
+            </optgroup>
+            <optgroup label="Exercise">
+              <option value="exercise - badminton">exercise - badminton</option>
+              <option value="exercise - gym">exercise - gym</option>
+              <option value="exercise - dance">exercise - dance</option>
+            </optgroup>
+            <optgroup label="Health">
+              <option value="health - medicine">health - medicine</option>
+              <option value="health - doctor">health - doctor</option>
+              <option value="health - physio">health - physio</option>
+              <option value="health - acupuncture">health - acupuncture</option>
+            </optgroup>
+          </select>
+        </div>
+
+        <div class="field">
+          <label for="date">Date</label>
+          <input type="date" id="date" name="date" required />
+        </div>
+
+        <div class="field">
+          <label for="comments">Comments <span class="optional">(optional)</span></label>
+          <textarea id="comments" name="comments" rows="2" placeholder="Anything worth noting…"></textarea>
+        </div>
+
+        <button type="submit" class="primary">Add expense</button>
+      </form>
+    </section>
+
+    <section class="card" aria-labelledby="list-heading">
+      <div class="list-header">
+        <h2 id="list-heading">Expenses</h2>
+        <div class="tools">
+          <label class="filter">
+            <span class="sr-only">Filter by tag</span>
+            <select id="filter-tag">
+              <option value="">All tags</option>
+            </select>
+          </label>
+          <button type="button" id="export-btn" class="ghost" title="Download a JSON backup">Export</button>
+          <button type="button" id="import-btn" class="ghost" title="Restore from a JSON backup">Import</button>
+          <button type="button" id="csv-btn" class="ghost" title="Download as CSV">CSV</button>
+          <input type="file" id="import-file" accept="application/json" hidden />
+        </div>
+      </div>
+
+      <div id="totals" class="totals" aria-live="polite"></div>
+
+      <div id="empty" class="empty">No expenses yet. Add your first one above.</div>
+      <ul id="expense-list" class="expense-list"></ul>
+    </section>
+  </main>
+
+  <footer>
+    <p>Data is stored only in this browser. Use <strong>Export</strong> regularly to back it up.</p>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
