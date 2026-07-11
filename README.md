@@ -13,7 +13,10 @@ Everything runs in your browser; your data is stored locally (`localStorage`).
   - **Utilities** — electricity, phone, water, heat
   - **Exercise** — badminton, gym, dance
   - **Health** — medicine, doctor, physio, acupuncture
+  - **Shopping** — clothes, accessories, gifts
+  - **Calle loto** — payment, broker, furniture, other
 - Currency: **EUR**, **USD**, **PHP**
+- Source (payment method): **cash**, **card - UB**, **card - BPI**, **card - Wise**, **card - Santander**
 - Date field (defaults to today) and free-text comments
 - Running totals per currency, filter by tag
 - **Monthly report** — pick a month for per-currency totals broken down by category and tag, with Print/PDF and CSV export

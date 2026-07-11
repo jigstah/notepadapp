@@ -5,6 +5,7 @@ const STORAGE_KEY = "expense-tracker.v1";
 const form = document.getElementById("expense-form");
 const amountEl = document.getElementById("amount");
 const currencyEl = document.getElementById("currency");
+const sourceEl = document.getElementById("source");
 const tagEl = document.getElementById("tag");
 const dateEl = document.getElementById("date");
 const commentsEl = document.getElementById("comments");
@@ -122,7 +123,7 @@ function render() {
           <span class="exp-amount">${escapeHtml(formatMoney(exp.amount, exp.currency))}</span>
           <span class="exp-tag">${escapeHtml(exp.tag)}</span>
         </div>
-        <div class="exp-meta">${escapeHtml(formatDate(exp.date))}</div>
+        <div class="exp-meta">${escapeHtml(formatDate(exp.date))}${exp.source ? " · " + escapeHtml(exp.source) : ""}</div>
         ${exp.comments ? `<div class="exp-comments">${escapeHtml(exp.comments)}</div>` : ""}
       </div>
       <button class="del-btn" title="Delete" aria-label="Delete expense" data-id="${exp.id}">✕</button>
@@ -348,6 +349,7 @@ form.addEventListener("submit", (e) => {
     id: uid(),
     amount,
     currency: currencyEl.value,
+    source: sourceEl.value,
     tag: tagEl.value,
     date: dateEl.value || todayISO(),
     comments: commentsEl.value.trim(),
@@ -356,9 +358,11 @@ form.addEventListener("submit", (e) => {
   render();
   checkThresholds();
 
-  // Reset for the next quick entry; keep currency, default date to today.
+  // Reset for the next quick entry; keep currency + source, default date to today.
+  const last = expenses[expenses.length - 1];
   form.reset();
-  currencyEl.value = expenses[expenses.length - 1].currency;
+  currencyEl.value = last.currency;
+  sourceEl.value = last.source;
   dateEl.value = todayISO();
   tagEl.selectedIndex = 0;
   amountEl.focus();
@@ -395,11 +399,11 @@ exportBtn.addEventListener("click", () => {
 });
 
 csvBtn.addEventListener("click", () => {
-  const header = ["date", "amount", "currency", "tag", "comments"];
+  const header = ["date", "amount", "currency", "source", "tag", "comments"];
   const rows = [...expenses]
     .sort((a, b) => (a.date < b.date ? 1 : -1))
     .map((e) =>
-      [e.date, e.amount, e.currency, e.tag, e.comments]
+      [e.date, e.amount, e.currency, e.source || "", e.tag, e.comments]
         .map((v) => `"${String(v).replace(/"/g, '""')}"`)
         .join(",")
     );
@@ -419,9 +423,9 @@ reportCsvBtn.addEventListener("click", () => {
     alert("No expenses to export for that month.");
     return;
   }
-  const header = ["date", "amount", "currency", "category", "tag", "comments"];
+  const header = ["date", "amount", "currency", "source", "category", "tag", "comments"];
   const rows = items.map((e) =>
-    [e.date, e.amount, e.currency, e.tag.split(" - ")[0], e.tag, e.comments]
+    [e.date, e.amount, e.currency, e.source || "", e.tag.split(" - ")[0], e.tag, e.comments]
       .map((v) => `"${String(v).replace(/"/g, '""')}"`)
       .join(",")
   );
@@ -444,6 +448,7 @@ importFile.addEventListener("change", () => {
           id: e.id || uid(),
           amount: Number(e.amount),
           currency: e.currency || "EUR",
+          source: e.source ? String(e.source) : "",
           tag: String(e.tag),
           date: String(e.date),
           comments: e.comments ? String(e.comments) : "",
