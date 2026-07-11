@@ -114,6 +114,40 @@
       <div id="empty" class="empty">No expenses yet. Add your first one above.</div>
       <ul id="expense-list" class="expense-list"></ul>
     </section>
+
+    <section class="card no-print" id="settings-card">
+      <details id="settings-details">
+        <summary class="settings-summary">🔔 Spending alerts &amp; Telegram setup</summary>
+        <div class="settings-body">
+          <p class="settings-help">
+            Get a Telegram alert when this month's total — all currencies converted to EUR at
+            European Central Bank rates — passes €500, €750, €1000, €1250 and €1500.
+            Each level alerts once per month. Your token is stored <strong>only in this browser</strong>,
+            never uploaded or committed to the code.
+          </p>
+
+          <div id="alerts-status" class="alerts-status" aria-live="polite"></div>
+
+          <div class="field">
+            <label for="tg-token">Telegram bot token</label>
+            <input type="password" id="tg-token" placeholder="12345:ABC…" autocomplete="off" />
+          </div>
+          <div class="field">
+            <label for="tg-chat">Telegram chat ID</label>
+            <input type="text" id="tg-chat" inputmode="numeric" placeholder="8034297532" autocomplete="off" />
+          </div>
+          <label class="checkbox-row">
+            <input type="checkbox" id="alerts-enabled" />
+            <span>Enable spending alerts on this device</span>
+          </label>
+
+          <div class="settings-actions">
+            <button type="button" id="settings-save" class="primary">Save</button>
+            <button type="button" id="settings-test" class="ghost">Send test alert</button>
+          </div>
+        </div>
+      </details>
+    </section>
   </main>
 
   <footer>

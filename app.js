@@ -26,6 +26,13 @@ const reportPrintBtn = document.getElementById("report-print-btn");
 
 const CURRENCY_SYMBOL = { EUR: "€", USD: "$", PHP: "₱" };
 
+const SETTINGS_KEY = "expense-tracker.settings";
+const FX_KEY = "expense-tracker.fx";
+const THRESHOLDS = [500, 750, 1000, 1250, 1500];
+// Rates are "units of currency per 1 EUR" (same shape Frankfurter returns).
+const FX_FALLBACK = { USD: 1.08, PHP: 63 };
+let fxRates = loadFx();
+
 /** @type {{id:string, amount:number, currency:string, tag:string, date:string, comments:string}[]} */
 let expenses = load();
 
@@ -126,6 +133,7 @@ function render() {
   renderTotals(filter ? visible : expenses);
   renderFilterOptions();
   renderReport();
+  updateAlertsUI();
 }
 
 function monthLabel(ym) {
@@ -218,6 +226,116 @@ function renderFilterOptions() {
   if (used.includes(current)) filterEl.value = current;
 }
 
+// --- currency conversion & spending alerts -------------------------------
+function loadFx() {
+  try {
+    const o = JSON.parse(localStorage.getItem(FX_KEY));
+    if (o && o.rates && o.rates.USD && o.rates.PHP) return o.rates;
+  } catch {}
+  return FX_FALLBACK;
+}
+
+function maybeRefreshFx() {
+  let cached = null;
+  try { cached = JSON.parse(localStorage.getItem(FX_KEY)); } catch {}
+  if (cached && cached.fetched === todayISO()) {
+    fxRates = cached.rates;
+    return;
+  }
+  // Frankfurter serves ECB rates, is free, needs no key, and allows browser requests.
+  fetch("https://api.frankfurter.dev/v1/latest?base=EUR&symbols=USD,PHP")
+    .then((r) => r.json())
+    .then((d) => {
+      if (d && d.rates && d.rates.USD && d.rates.PHP) {
+        fxRates = d.rates;
+        localStorage.setItem(FX_KEY, JSON.stringify({ rates: d.rates, date: d.date, fetched: todayISO() }));
+        updateAlertsUI();
+        checkThresholds();
+      }
+    })
+    .catch(() => { /* keep cached/fallback rates */ });
+}
+
+function toEur(amount, currency) {
+  if (currency === "EUR") return amount;
+  const r = fxRates[currency];
+  return r ? amount / r : amount;
+}
+
+function monthlyEurTotal(ym) {
+  return expenses
+    .filter((e) => e.date.slice(0, 7) === ym)
+    .reduce((sum, e) => sum + toEur(Number(e.amount), e.currency), 0);
+}
+
+function getSettings() {
+  try { return JSON.parse(localStorage.getItem(SETTINGS_KEY)) || {}; }
+  catch { return {}; }
+}
+function saveSettings(s) {
+  localStorage.setItem(SETTINGS_KEY, JSON.stringify(s));
+}
+
+// Telegram blocks normal browser (CORS) calls, so we fire a fire-and-forget
+// GET via an image beacon — the request still reaches Telegram and the
+// message is delivered; we just can't read the response.
+function sendTelegram(token, chatId, text) {
+  if (!token || !chatId) return false;
+  const url =
+    "https://api.telegram.org/bot" + token + "/sendMessage" +
+    "?chat_id=" + encodeURIComponent(chatId) +
+    "&text=" + encodeURIComponent(text) +
+    "&disable_web_page_preview=true";
+  const img = new Image();
+  img.onload = img.onerror = function () {}; // response is JSON, not an image — expected
+  img.src = url;
+  return true;
+}
+
+function checkThresholds() {
+  const s = getSettings();
+  if (!s.alertsEnabled || !s.token || !s.chatId) return;
+  const ym = todayISO().slice(0, 7);
+  const total = monthlyEurTotal(ym);
+  s.fired = s.fired || {};
+  const fired = new Set(s.fired[ym] || []);
+
+  // Re-arm any threshold the total has since dropped back below (e.g. after a delete).
+  for (const t of Array.from(fired)) if (total < t) fired.delete(t);
+
+  const newlyCrossed = THRESHOLDS.filter((t) => total >= t && !fired.has(t));
+  if (newlyCrossed.length) {
+    const highest = Math.max(...newlyCrossed);
+    newlyCrossed.forEach((t) => fired.add(t));
+    sendTelegram(
+      s.token,
+      s.chatId,
+      `⚠️ ${monthLabel(ym)} spending has reached €${total.toFixed(2)} — passed your €${highest} alert level.`
+    );
+  }
+  s.fired[ym] = Array.from(fired).sort((a, b) => a - b);
+  saveSettings(s);
+  updateAlertsUI();
+}
+
+function updateAlertsUI() {
+  const el = document.getElementById("alerts-status");
+  if (!el) return;
+  const ym = todayISO().slice(0, 7);
+  const total = monthlyEurTotal(ym);
+  const s = getSettings();
+  const fired = new Set((s.fired && s.fired[ym]) || []);
+  const chips = THRESHOLDS.map((t) => {
+    const passed = total >= t;
+    const alerted = fired.has(t);
+    return `<span class="thr ${passed ? "thr-passed" : ""}">€${t}${alerted ? " 🔔" : passed ? " ✓" : ""}</span>`;
+  }).join(" ");
+  el.innerHTML =
+    `<div class="alerts-total">${escapeHtml(monthLabel(ym))} so far: <strong>€${total.toFixed(2)}</strong>` +
+    ` <span class="fx-note">(all currencies at ECB rates)</span></div>` +
+    `<div class="thr-row">${chips}</div>`;
+}
+
 // --- events --------------------------------------------------------------
 form.addEventListener("submit", (e) => {
   e.preventDefault();
@@ -236,6 +354,7 @@ form.addEventListener("submit", (e) => {
   });
   save();
   render();
+  checkThresholds();
 
   // Reset for the next quick entry; keep currency, default date to today.
   form.reset();
@@ -334,6 +453,7 @@ importFile.addEventListener("change", () => {
       expenses = merged;
       save();
       render();
+      checkThresholds();
       alert(`Imported ${cleaned.length} expense(s).`);
     } catch (err) {
       alert("Could not import that file: " + err.message);
@@ -343,7 +463,43 @@ importFile.addEventListener("change", () => {
   reader.readAsText(file);
 });
 
+// --- settings panel ------------------------------------------------------
+const tokenEl = document.getElementById("tg-token");
+const chatEl = document.getElementById("tg-chat");
+const alertsEnabledEl = document.getElementById("alerts-enabled");
+
+(function fillSettings() {
+  const s = getSettings();
+  if (s.token) tokenEl.value = s.token;
+  if (s.chatId) chatEl.value = s.chatId;
+  alertsEnabledEl.checked = !!s.alertsEnabled;
+})();
+
+document.getElementById("settings-save").addEventListener("click", () => {
+  const s = getSettings();
+  s.token = tokenEl.value.trim();
+  s.chatId = chatEl.value.trim();
+  s.alertsEnabled = alertsEnabledEl.checked;
+  saveSettings(s);
+  updateAlertsUI();
+  checkThresholds();
+  alert("Settings saved on this device.");
+});
+
+document.getElementById("settings-test").addEventListener("click", () => {
+  const token = tokenEl.value.trim();
+  const chatId = chatEl.value.trim();
+  if (!token || !chatId) {
+    alert("Enter your bot token and chat ID first.");
+    return;
+  }
+  sendTelegram(token, chatId, "✅ Test alert from your Expense Tracker — alerts are working!");
+  alert("Test alert sent. Check Telegram — if nothing arrives within ~10s, re-check the token and chat ID.");
+});
+
 // --- init ----------------------------------------------------------------
 dateEl.value = todayISO();
 reportMonthEl.value = todayISO().slice(0, 7);
 render();
+maybeRefreshFx();
+checkThresholds();

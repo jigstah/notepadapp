@@ -194,6 +194,53 @@ button.ghost:hover { background: var(--bg); }
 }
 .report-tag-row .tag-amt { color: var(--ink); }
 
+/* Settings / alerts panel */
+.settings-summary {
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 1.05rem;
+  list-style: none;
+}
+.settings-summary::-webkit-details-marker { display: none; }
+.settings-summary::before { content: "▸ "; color: var(--muted); }
+details[open] .settings-summary::before { content: "▾ "; }
+.settings-body { margin-top: 14px; }
+.settings-help { font-size: 0.85rem; color: var(--muted); margin: 0 0 14px; }
+.checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.9rem;
+  margin: 4px 0 14px;
+}
+.checkbox-row input { width: auto; }
+.settings-actions { display: flex; gap: 8px; }
+.settings-actions .primary { width: auto; flex: 1; margin-top: 0; }
+
+.alerts-status {
+  background: var(--bg);
+  border-radius: 10px;
+  padding: 12px;
+  margin-bottom: 14px;
+}
+.alerts-total { font-size: 0.95rem; }
+.fx-note { color: var(--muted); font-size: 0.78rem; }
+.thr-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.thr {
+  font-size: 0.8rem;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: #fff;
+  border: 1px solid var(--line);
+  color: var(--muted);
+}
+.thr-passed {
+  background: var(--brand-soft);
+  border-color: var(--brand-soft);
+  color: #134e4a;
+  font-weight: 600;
+}
+
 @media print {
   body { background: #fff; }
   .no-print { display: none !important; }
