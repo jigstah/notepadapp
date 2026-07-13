@@ -11,7 +11,7 @@ Tip: open the app link on your phone and use your browser's **"Add to Home Scree
 
 Fill in the **Add expense** form and tap **Add expense**:
 
-- **Amount** and **Currency** — EUR, USD or PHP
+- **Amount** and **Currency** — EUR, USD or PHP. Enter a **negative amount** (e.g. `-30`) for a refund or an incoming payment — it shows in green and is subtracted from your totals.
 - **Tag** — grouped dropdown:
   - Food — grocery, drinks out, eat out, order in/takeaway
   - Utilities — electricity, phone, water, heat

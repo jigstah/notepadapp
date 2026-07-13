@@ -19,9 +19,9 @@
       <form id="expense-form" autocomplete="off">
         <div class="row">
           <div class="field amount-field">
-            <label for="amount">Amount</label>
-            <input type="number" id="amount" name="amount" inputmode="decimal"
-                   step="0.01" min="0" placeholder="0.00" required />
+            <label for="amount">Amount <span class="optional">(negative = refund)</span></label>
+            <input type="number" id="amount" name="amount" inputmode="text"
+                   step="0.01" placeholder="0.00" required />
           </div>
           <div class="field currency-field">
             <label for="currency">Currency</label>

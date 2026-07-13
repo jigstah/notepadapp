@@ -120,7 +120,7 @@ function render() {
     li.innerHTML = `
       <div class="exp-main">
         <div class="exp-top">
-          <span class="exp-amount">${escapeHtml(formatMoney(exp.amount, exp.currency))}</span>
+          <span class="exp-amount${exp.amount < 0 ? " exp-amount-neg" : ""}">${escapeHtml(formatMoney(exp.amount, exp.currency))}</span>
           <span class="exp-tag">${escapeHtml(exp.tag)}</span>
         </div>
         <div class="exp-meta">${escapeHtml(formatDate(exp.date))}${exp.source ? " · " + escapeHtml(exp.source) : ""}</div>
@@ -341,7 +341,7 @@ function updateAlertsUI() {
 form.addEventListener("submit", (e) => {
   e.preventDefault();
   const amount = parseFloat(amountEl.value);
-  if (isNaN(amount) || amount < 0) {
+  if (isNaN(amount) || amount === 0) {
     amountEl.focus();
     return;
   }

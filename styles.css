@@ -136,6 +136,7 @@ button.ghost:hover { background: var(--bg); }
 .exp-main { flex: 1; min-width: 0; }
 .exp-top { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
 .exp-amount { font-weight: 700; font-size: 1.05rem; }
+.exp-amount-neg { color: #059669; }
 .exp-tag {
   display: inline-block;
   background: var(--bg);
