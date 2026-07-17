@@ -19,6 +19,8 @@ Fill in the **Add expense** form and tap **Add expense**:
   - Health — medicine, doctor, physio, acupuncture
   - Shopping — clothes, accessories, gifts
   - Calle loto — payment, broker, furniture, other
+  - Transportation — metro, uber, other
+  - Travel — ticket, accommodation, transportation, food
   - Other — a catch-all tag for anything that doesn't fit
 - **Source** (payment method, required) — cash, card - UB, card - BPI, card - Wise, card - Santander
 - **Date** — defaults to today

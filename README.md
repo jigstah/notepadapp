@@ -15,6 +15,8 @@ Everything runs in your browser; your data is stored locally (`localStorage`).
   - **Health** — medicine, doctor, physio, acupuncture
   - **Shopping** — clothes, accessories, gifts
   - **Calle loto** — payment, broker, furniture, other
+  - **Transportation** — metro, uber, other
+  - **Travel** — ticket, accommodation, transportation, food
 - Currency: **EUR**, **USD**, **PHP**
 - Source (payment method): **cash**, **card - UB**, **card - BPI**, **card - Wise**, **card - Santander**
 - Date field (defaults to today) and free-text comments
